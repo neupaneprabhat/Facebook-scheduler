@@ -1,0 +1,44 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model FacebookPage {
+  id                      String   @id @default(cuid())
+  pageId                  String   @unique
+  pageName                String
+  category                String?
+  pictureUrl              String?
+  pageAccessTokenEncrypted String
+  isConnected             Boolean  @default(true)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  posts                   Post[]
+}
+
+model Post {
+  id              String       @id @default(cuid())
+  facebookPageId  String
+  facebookPage    FacebookPage @relation(fields: [facebookPageId], references: [id], onDelete: Cascade)
+  caption         String?
+  imageUrl        String?
+  videoUrl        String?
+  mediaUrls       String?      // JSON string array for multi-image/multi-media posts e.g. ["/uploads/1.jpg", "/uploads/2.jpg"]
+  mediaType       String       @default("NONE") // NONE, IMAGE, VIDEO, MULTI_IMAGE
+  scheduledAt     DateTime     // Stored in UTC
+  timezone        String       @default("UTC")
+  status          String       @default("SCHEDULED") // SCHEDULED, PUBLISHING, PUBLISHED, FAILED
+  facebookPostId  String?
+  errorMessage    String?
+  publishedAt     DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([status, scheduledAt])
+  @@index([facebookPageId])
+}
