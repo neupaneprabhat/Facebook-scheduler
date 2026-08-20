@@ -6,8 +6,13 @@ import { z } from "zod";
 // Initialize scheduler runner and re-register all pending posts on startup
 startBackgroundScheduler();
 
-// Re-register timers for all SCHEDULED future posts after server restart
 (async () => {
+  if (
+    process.env.NEXT_PHASE === "phase-production-build" ||
+    process.env.npm_lifecycle_event === "build"
+  ) {
+    return;
+  }
   try {
     const now = new Date();
     const pendingPosts = await prisma.post.findMany({

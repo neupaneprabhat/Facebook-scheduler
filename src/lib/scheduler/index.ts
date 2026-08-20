@@ -55,6 +55,12 @@ export async function processDuePosts(): Promise<{ processedCount: number; resul
  */
 export function startBackgroundScheduler(intervalMs = 10000) {
   if (isRunnerStarted) return;
+  if (
+    process.env.NEXT_PHASE === "phase-production-build" ||
+    process.env.npm_lifecycle_event === "build"
+  ) {
+    return;
+  }
   isRunnerStarted = true;
 
   console.log(`[Scheduler] Automatic Background Runner initialized (polling every ${intervalMs / 1000}s)`);
@@ -70,6 +76,10 @@ export function startBackgroundScheduler(intervalMs = 10000) {
       console.error("[Scheduler] Poller error:", error);
     }
   }, intervalMs);
+
+  if (pollerInterval && typeof pollerInterval.unref === "function") {
+    pollerInterval.unref();
+  }
 }
 
 /**
@@ -78,6 +88,13 @@ export function startBackgroundScheduler(intervalMs = 10000) {
  * regardless of how far in the future it is.
  */
 export function schedulePostJob(postId: string, scheduledAt: Date) {
+  if (
+    process.env.NEXT_PHASE === "phase-production-build" ||
+    process.env.npm_lifecycle_event === "build"
+  ) {
+    return;
+  }
+
   const delay = scheduledAt.getTime() - Date.now();
 
   console.log(`[Scheduler] Post ${postId} registered. Scheduled at ${scheduledAt.toISOString()} (in ${Math.round(delay / 1000)}s)`);
@@ -90,10 +107,11 @@ export function schedulePostJob(postId: string, scheduledAt: Date) {
 
   if (delay <= 0) {
     // Already due, execute immediately in background
-    setTimeout(() => {
+    const t = setTimeout(() => {
       scheduledTimers.delete(postId);
       executePostPublishing(postId).catch((err) => console.error(`[Scheduler] Execution error for ${postId}:`, err));
     }, 200);
+    if (t && typeof t.unref === "function") t.unref();
   } else {
     // ALWAYS set an exact timer, even for posts far in the future
     // The poller acts as a safety net for server restarts
@@ -104,6 +122,10 @@ export function schedulePostJob(postId: string, scheduledAt: Date) {
         console.error(`[Scheduler] Exact timer execution error for ${postId}:`, err)
       );
     }, delay);
+
+    if (timer && typeof timer.unref === "function") {
+      timer.unref();
+    }
 
     scheduledTimers.set(postId, timer);
   }
