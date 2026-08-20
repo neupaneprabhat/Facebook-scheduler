@@ -1846,23 +1846,24 @@ export default function FacebookSchedulerPage() {
                                     <span className="text-slate-400 font-normal">Shares</span>
                                   </span>
                                 </div>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1.5">
                                   <button
                                     type="button"
                                     onClick={() => refreshPostStats(post.id)}
-                                    title="Refresh live stats now"
-                                    className="p-1 rounded-md text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition cursor-pointer"
+                                    title="Sync live likes & comments from Facebook"
+                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition cursor-pointer"
                                   >
                                     <RefreshCw className="w-3 h-3" />
+                                    <span>Sync</span>
                                   </button>
                                   {postStats[post.id]!.postUrl && (
                                     <a
                                       href={postStats[post.id]!.postUrl}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="text-[10px] font-bold text-blue-600 hover:text-blue-800 transition"
+                                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition"
                                     >
-                                      View ↗
+                                      <span>View ↗</span>
                                     </a>
                                   )}
                                 </div>
