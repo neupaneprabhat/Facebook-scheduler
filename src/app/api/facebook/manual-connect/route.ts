@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "../../../lib/prisma";
-import { encryptToken } from "../../../lib/crypto";
+import { prisma } from "../../../../lib/prisma";
+import { encryptToken } from "../../../../lib/crypto";
 
 const GRAPH_API_VERSION = process.env.FACEBOOK_GRAPH_API_VERSION || "v21.0";
 

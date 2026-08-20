@@ -25,7 +25,7 @@ import {
   Play,
   Image as ImageIcon,
 } from "lucide-react";
-import { getUtcDateFromLocal, formatInTimezone } from "@/lib/time";
+import { getUtcDateFromLocal, formatInTimezone } from "../lib/time";
 
 interface FacebookPageItem {
   id: string;

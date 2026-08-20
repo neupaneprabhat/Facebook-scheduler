@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { retryFacebookPost } from "../../../../services/facebook";
+import { retryFacebookPost } from "../../../../../services/facebook";
 
 export async function POST(
   req: NextRequest,

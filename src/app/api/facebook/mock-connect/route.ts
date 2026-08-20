@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma } from "../../../lib/prisma";
-import { encryptToken } from "../../../lib/crypto";
+import { prisma } from "../../../../lib/prisma";
+import { encryptToken } from "../../../../lib/crypto";
 
 export async function POST() {
   try {
