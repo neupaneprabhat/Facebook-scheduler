@@ -24,6 +24,8 @@ import {
   Film,
   Play,
   Image as ImageIcon,
+  LogOut,
+  User as UserIcon,
 } from "lucide-react";
 import { getUtcDateFromLocal, formatInTimezone } from "../lib/time";
 
@@ -127,50 +129,73 @@ export default function FacebookSchedulerPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scheduledPostsSectionRef = useRef<HTMLDivElement>(null);
 
-  // 1. Initial Load: Detect Timezone, Fetch Config & Pages & Posts, Load Draft
+  const [currentUser, setCurrentUser] = useState<{ id: string; name: string; email: string; role: string } | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  // 1. Initial Load: Check Auth, Detect Timezone, Fetch Config & Pages & Posts, Load Draft
   useEffect(() => {
-    // Check URL parameters for OAuth messages
-    if (typeof window !== "undefined") {
-      const urlParams = new URLSearchParams(window.location.search);
-      const authError = urlParams.get("auth_error");
-      const authWarning = urlParams.get("auth_warning");
-      const connected = urlParams.get("connected");
-
-      if (authError) {
-        showToast("error", `Facebook Login Error: ${authError}`);
-      } else if (authWarning) {
-        showToast("info", authWarning);
-      } else if (connected === "success") {
-        showToast("success", "Facebook Page(s) connected successfully!");
+    const checkAuthAndInit = async () => {
+      try {
+        const res = await fetch("/api/auth/me");
+        const data = await res.json();
+        if (!data.authenticated || !data.user) {
+          window.location.href = "/login";
+          return;
+        }
+        setCurrentUser(data.user);
+      } catch (err) {
+        console.error("Auth check failed:", err);
+        window.location.href = "/login";
+        return;
+      } finally {
+        setAuthLoading(false);
       }
-    }
 
-    // Detect user's timezone if valid
-    try {
-      const localTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      if (localTz) {
-        setTimezone(localTz);
+      // Check URL parameters for OAuth messages
+      if (typeof window !== "undefined") {
+        const urlParams = new URLSearchParams(window.location.search);
+        const authError = urlParams.get("auth_error");
+        const authWarning = urlParams.get("auth_warning");
+        const connected = urlParams.get("connected");
+
+        if (authError) {
+          showToast("error", `Facebook Login Error: ${authError}`);
+        } else if (authWarning) {
+          showToast("info", authWarning);
+        } else if (connected === "success") {
+          showToast("success", "Facebook Page(s) connected successfully!");
+        }
       }
-    } catch {
-      setTimezone("Asia/Kathmandu");
-    }
 
-    // Set default publish date to tomorrow
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowStr = tomorrow.toISOString().split("T")[0];
-    setPublishDate(tomorrowStr);
+      // Detect user's timezone if valid
+      try {
+        const localTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        if (localTz) {
+          setTimezone(localTz);
+        }
+      } catch {
+        setTimezone("Asia/Kathmandu");
+      }
 
-    // Restore caption draft from localStorage
-    const savedDraft = localStorage.getItem("fb_caption_draft");
-    if (savedDraft) {
-      setCaption(savedDraft);
-    }
+      // Set default publish date to tomorrow
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomorrowStr = tomorrow.toISOString().split("T")[0];
+      setPublishDate(tomorrowStr);
 
-    // Fetch config & initial data
-    fetchConfig();
-    fetchPages();
-    fetchPosts();
+      // Restore caption draft from localStorage
+      const savedDraft = localStorage.getItem("fb_caption_draft");
+      if (savedDraft) {
+        setCaption(savedDraft);
+      }
+
+      // Fetch config & initial data
+      fetchConfig();
+      fetchPages();
+      fetchPosts();
+    };
+
+    checkAuthAndInit();
 
     // Auto-refresh posts list every 5 seconds
     const interval = setInterval(() => {
@@ -179,6 +204,16 @@ export default function FacebookSchedulerPage() {
 
     return () => clearInterval(interval);
   }, []);
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      window.location.href = "/login";
+    } catch (err) {
+      console.error("Logout failed:", err);
+      window.location.href = "/login";
+    }
+  };
 
   // Autosave draft
   useEffect(() => {
@@ -718,6 +753,17 @@ export default function FacebookSchedulerPage() {
     return today.toISOString().split("T")[0];
   };
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[#F0F2F5] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3 text-slate-500">
+          <div className="w-10 h-10 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
+          <span className="text-sm font-medium">Verifying authentication...</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#F0F2F5] pb-24">
       {/* Toast Notification */}
@@ -766,12 +812,12 @@ export default function FacebookSchedulerPage() {
           <div className="flex items-center gap-3">
             {/* Mode Badge */}
             {isRealMetaConfigured ? (
-              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold">
+              <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                 Meta Graph API v21.0
               </div>
             ) : (
-              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-xs font-semibold" title="Simulated mode active - Add FACEBOOK_APP_ID in .env for live Meta Graph API">
+              <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-xs font-semibold" title="Simulated mode active - Add FACEBOOK_APP_ID in .env for live Meta Graph API">
                 <span className="w-2 h-2 rounded-full bg-amber-500"></span>
                 Dev / Demo Mode
               </div>
@@ -785,6 +831,29 @@ export default function FacebookSchedulerPage() {
             >
               Queue ({posts.filter((p) => p.status === "SCHEDULED").length})
             </button>
+
+            {/* User Profile & Logout */}
+            {currentUser && (
+              <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
+                <div className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200/80">
+                  <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center text-[11px] font-bold">
+                    {currentUser.name.charAt(0).toUpperCase()}
+                  </div>
+                  <span className="text-xs font-semibold text-slate-700 max-w-[100px] truncate hidden md:inline">
+                    {currentUser.name}
+                  </span>
+                </div>
+
+                <button
+                  onClick={handleLogout}
+                  title="Log out of your account"
+                  className="p-1.5 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors flex items-center gap-1 text-xs font-medium cursor-pointer"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span className="hidden lg:inline">Logout</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </header>
