@@ -71,14 +71,13 @@ export async function POST(req: NextRequest) {
     try {
       const meTarget = detectedPageId ? detectedPageId : "me";
       const meRes = await fetch(
-        `https://graph.facebook.com/${GRAPH_API_VERSION}/${meTarget}?fields=id,name,category,picture{url}&access_token=${token}`
+        `https://graph.facebook.com/${GRAPH_API_VERSION}/${meTarget}?fields=id,name,picture{url}&access_token=${token}`
       );
       const meData = await meRes.json();
 
       if (meData && !meData.error && meData.id) {
         detectedPageId = meData.id;
         pageName = meData.name || pageName;
-        category = meData.category || category;
         pictureUrl = meData.picture?.data?.url || null;
       } else if (meData?.error) {
         console.warn("Graph API error verifying token:", meData.error);
