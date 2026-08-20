@@ -275,19 +275,23 @@ export default function FacebookSchedulerPage() {
           (p) => p.status === "PUBLISHED" && p.facebookPostId
         );
         publishedPosts.forEach(async (p) => {
-          try {
-            const sRes = await fetch(`/api/posts/${p.id}/stats`);
-            const sData = await sRes.json();
-            if (sData.success && sData.stats) {
-              setPostStats((prev) => ({ ...prev, [p.id]: sData.stats }));
-            }
-          } catch {
-            // ignore stats fetch errors silently
-          }
+          refreshPostStats(p.id);
         });
       }
     } catch (err) {
       if (!silent) console.error("Failed to load posts:", err);
+    }
+  };
+
+  const refreshPostStats = async (postId: string) => {
+    try {
+      const sRes = await fetch(`/api/posts/${postId}/stats`);
+      const sData = await sRes.json();
+      if (sData.success && sData.stats) {
+        setPostStats((prev) => ({ ...prev, [postId]: sData.stats }));
+      }
+    } catch {
+      // ignore
     }
   };
 
@@ -1813,16 +1817,26 @@ export default function FacebookSchedulerPage() {
                                     <span className="text-slate-400 font-normal">Shares</span>
                                   </span>
                                 </div>
-                                {postStats[post.id]!.postUrl && (
-                                  <a
-                                    href={postStats[post.id]!.postUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-[10px] font-bold text-blue-600 hover:text-blue-800 transition"
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => refreshPostStats(post.id)}
+                                    title="Refresh live stats now"
+                                    className="p-1 rounded-md text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition cursor-pointer"
                                   >
-                                    View ↗
-                                  </a>
-                                )}
+                                    <RefreshCw className="w-3 h-3" />
+                                  </button>
+                                  {postStats[post.id]!.postUrl && (
+                                    <a
+                                      href={postStats[post.id]!.postUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-[10px] font-bold text-blue-600 hover:text-blue-800 transition"
+                                    >
+                                      View ↗
+                                    </a>
+                                  )}
+                                </div>
                               </div>
                             ) : (
                               <div className="flex items-center gap-1.5 text-[10px] text-slate-400">

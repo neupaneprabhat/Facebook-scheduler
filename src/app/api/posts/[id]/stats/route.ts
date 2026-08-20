@@ -17,6 +17,7 @@ export async function GET(
         facebookPage: {
           select: {
             pageAccessTokenEncrypted: true,
+            pageId: true,
           },
         },
       },
@@ -35,32 +36,60 @@ export async function GET(
     }
 
     const pageToken = decryptToken(post.facebookPage.pageAccessTokenEncrypted);
+    const targetIds = [post.facebookPostId];
 
-    // Fetch real stats from Facebook Graph API
-    const statsRes = await fetch(
-      `https://graph.facebook.com/${GRAPH_API_VERSION}/${post.facebookPostId}?fields=likes.summary(true),comments.summary(true),shares&access_token=${pageToken}`
-    );
-
-    const statsData = await statsRes.json();
-
-    if (statsData.error) {
-      console.warn("FB stats error:", statsData.error);
-      return NextResponse.json({
-        success: true,
-        stats: {
-          likes: 0,
-          comments: 0,
-          shares: 0,
-          postUrl: `https://www.facebook.com/${post.facebookPostId}`,
-        },
-      });
+    // If ID is compound (e.g. pageId_postId), also try the single postId
+    if (post.facebookPostId.includes("_")) {
+      const parts = post.facebookPostId.split("_");
+      if (parts[1]) targetIds.push(parts[1]);
     }
 
-    const likes = statsData.likes?.summary?.total_count ?? 0;
-    const comments = statsData.comments?.summary?.total_count ?? 0;
-    const shares = statsData.shares?.count ?? 0;
-    const facebookPageNumericId = post.facebookPostId?.split("_")[0];
-    const postUrl = `https://www.facebook.com/permalink.php?story_fbid=${post.facebookPostId?.split("_")[1]}&id=${facebookPageNumericId}`;
+    let statsData: any = null;
+
+    for (const testId of targetIds) {
+      try {
+        const fields =
+          "reactions.summary(total_count).limit(0),likes.summary(true).limit(0),comments.summary(total_count).limit(0),comments.summary(true),shares,permalink_url";
+        const statsRes = await fetch(
+          `https://graph.facebook.com/${GRAPH_API_VERSION}/${testId}?fields=${fields}&access_token=${pageToken}`
+        );
+        const data = await statsRes.json();
+
+        if (data && !data.error) {
+          statsData = data;
+          break;
+        } else if (data?.error) {
+          console.warn(`FB stats lookup warning for ${testId}:`, data.error.message);
+        }
+      } catch (err) {
+        console.warn(`Fetch error for ${testId}:`, err);
+      }
+    }
+
+    // Extract reactions / likes count
+    const likes =
+      statsData?.reactions?.summary?.total_count ??
+      statsData?.likes?.summary?.total_count ??
+      (Array.isArray(statsData?.likes?.data) ? statsData.likes.data.length : 0);
+
+    // Extract comments count
+    const comments =
+      statsData?.comments?.summary?.total_count ??
+      (Array.isArray(statsData?.comments?.data) ? statsData.comments.data.length : 0);
+
+    // Extract shares count
+    const shares = statsData?.shares?.count ?? 0;
+
+    // Direct link to the post
+    let postUrl = statsData?.permalink_url;
+    if (!postUrl) {
+      if (post.facebookPostId.includes("_")) {
+        const [pageNumericId, postNumericId] = post.facebookPostId.split("_");
+        postUrl = `https://www.facebook.com/${pageNumericId}/posts/${postNumericId}`;
+      } else {
+        postUrl = `https://www.facebook.com/${post.facebookPage.pageId}/posts/${post.facebookPostId}`;
+      }
+    }
 
     return NextResponse.json({
       success: true,
