@@ -83,11 +83,14 @@ export async function GET(
     // Direct link to the post
     let postUrl = statsData?.permalink_url;
     if (!postUrl) {
-      if (post.facebookPostId.includes("_")) {
+      if (post.mediaType === "VIDEO") {
+        postUrl = `https://www.facebook.com/watch/?v=${post.facebookPostId}`;
+      } else if (post.facebookPostId.includes("_")) {
         const [pageNumericId, postNumericId] = post.facebookPostId.split("_");
-        postUrl = `https://www.facebook.com/${pageNumericId}/posts/${postNumericId}`;
+        postUrl = `https://www.facebook.com/permalink.php?story_fbid=${postNumericId}&id=${pageNumericId}`;
       } else {
-        postUrl = `https://www.facebook.com/${post.facebookPage.pageId}/posts/${post.facebookPostId}`;
+        // Single Photo ID
+        postUrl = `https://www.facebook.com/photo/?fbid=${post.facebookPostId}`;
       }
     }
 
