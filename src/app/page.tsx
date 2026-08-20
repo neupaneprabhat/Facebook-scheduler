@@ -63,6 +63,13 @@ interface ScheduledPost {
   createdAt: string;
 }
 
+interface PostStats {
+  likes: number;
+  comments: number;
+  shares: number;
+  postUrl: string;
+}
+
 const COMMON_TIMEZONES = [
   { value: "Asia/Kathmandu", label: "Asia/Kathmandu (Nepal Time UTC +05:45)" },
   { value: "Asia/Kolkata", label: "Asia/Kolkata (India Standard Time UTC +05:30)" },
@@ -131,6 +138,7 @@ export default function FacebookSchedulerPage() {
 
   const [currentUser, setCurrentUser] = useState<{ id: string; name: string; email: string; role: string } | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [postStats, setPostStats] = useState<Record<string, PostStats | null>>({});
 
   // 1. Initial Load: Check Auth, Detect Timezone, Fetch Config & Pages & Posts, Load Draft
   useEffect(() => {
@@ -262,6 +270,21 @@ export default function FacebookSchedulerPage() {
       const data = await res.json();
       if (data.success && data.posts) {
         setPosts(data.posts);
+        // Fetch stats for published posts (silently)
+        const publishedPosts = (data.posts as ScheduledPost[]).filter(
+          (p) => p.status === "PUBLISHED" && p.facebookPostId
+        );
+        publishedPosts.forEach(async (p) => {
+          try {
+            const sRes = await fetch(`/api/posts/${p.id}/stats`);
+            const sData = await sRes.json();
+            if (sData.success && sData.stats) {
+              setPostStats((prev) => ({ ...prev, [p.id]: sData.stats }));
+            }
+          } catch {
+            // ignore stats fetch errors silently
+          }
+        });
       }
     } catch (err) {
       if (!silent) console.error("Failed to load posts:", err);
@@ -1765,6 +1788,48 @@ export default function FacebookSchedulerPage() {
                           <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-emerald-700 bg-emerald-50 px-2 py-1 rounded text-[10px]">
                             <span className="font-mono truncate">ID: {post.facebookPostId}</span>
                             <span className="font-bold">Published</span>
+                          </div>
+                        )}
+
+                        {/* Live Facebook Stats */}
+                        {post.status === "PUBLISHED" && post.facebookPostId && (
+                          <div className="mt-2 pt-2 border-t border-slate-100">
+                            {postStats[post.id] ? (
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3 text-[11px] text-slate-600">
+                                  <span className="flex items-center gap-1 font-semibold">
+                                    <span>👍</span>
+                                    <span className="text-blue-700">{postStats[post.id]!.likes}</span>
+                                    <span className="text-slate-400 font-normal">Likes</span>
+                                  </span>
+                                  <span className="flex items-center gap-1 font-semibold">
+                                    <span>💬</span>
+                                    <span className="text-emerald-700">{postStats[post.id]!.comments}</span>
+                                    <span className="text-slate-400 font-normal">Comments</span>
+                                  </span>
+                                  <span className="flex items-center gap-1 font-semibold">
+                                    <span>↗️</span>
+                                    <span className="text-indigo-700">{postStats[post.id]!.shares}</span>
+                                    <span className="text-slate-400 font-normal">Shares</span>
+                                  </span>
+                                </div>
+                                {postStats[post.id]!.postUrl && (
+                                  <a
+                                    href={postStats[post.id]!.postUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-[10px] font-bold text-blue-600 hover:text-blue-800 transition"
+                                  >
+                                    View ↗
+                                  </a>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
+                                <div className="w-2.5 h-2.5 border border-slate-300 border-t-transparent rounded-full animate-spin" />
+                                <span>Loading live stats...</span>
+                              </div>
+                            )}
                           </div>
                         )}
 
