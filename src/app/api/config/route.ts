@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { isRealFacebookConfigured } from "@/services/facebook";
+import { isRealFacebookConfigured } from "../../../services/facebook";
 
 export async function GET() {
   return NextResponse.json({

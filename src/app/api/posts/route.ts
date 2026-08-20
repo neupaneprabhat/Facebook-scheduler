@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { schedulePostJob, startBackgroundScheduler } from "@/lib/scheduler";
+import { prisma } from "../../../lib/prisma";
+import { schedulePostJob, startBackgroundScheduler } from "../../../lib/scheduler";
 import { z } from "zod";
 
 // Initialize scheduler runner and re-register all pending posts on startup

@@ -1,5 +1,5 @@
-import { prisma } from "@/lib/prisma";
-import { executePostPublishing } from "@/services/facebook";
+import { prisma } from "../prisma";
+import { executePostPublishing } from "../../services/facebook";
 
 let isRunnerStarted = false;
 let pollerInterval: NodeJS.Timeout | null = null;

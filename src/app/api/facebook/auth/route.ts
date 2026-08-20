@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { connectFacebook, getFacebookPages, getFacebookLoginUrl, isRealFacebookConfigured } from "@/services/facebook";
-import { prisma } from "@/lib/prisma";
-import { encryptToken } from "@/lib/crypto";
+import { connectFacebook, getFacebookPages, getFacebookLoginUrl, isRealFacebookConfigured } from "../../../services/facebook";
+import { prisma } from "../../../lib/prisma";
+import { encryptToken } from "../../../lib/crypto";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);

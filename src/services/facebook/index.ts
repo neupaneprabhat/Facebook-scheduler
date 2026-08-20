@@ -1,5 +1,5 @@
-import { prisma } from "@/lib/prisma";
-import { decryptToken, encryptToken } from "@/lib/crypto";
+import { prisma } from "../../lib/prisma";
+import { decryptToken, encryptToken } from "../../lib/crypto";
 import path from "path";
 import fs from "fs/promises";
 
