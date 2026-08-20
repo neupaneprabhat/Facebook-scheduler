@@ -2101,16 +2101,16 @@ export default function FacebookSchedulerPage() {
                   }
                   setIsAddingPage(true);
                   try {
-                    const res = await fetch("/api/facebook/manual-connect", {
+                    // First try update-token which refreshes existing page tokens
+                    const res = await fetch("/api/facebook/update-token", {
                       method: "POST",
                       headers: { "Content-Type": "application/json" },
                       body: JSON.stringify({ pageId, token }),
                     });
                     const data = await res.json();
                     if (data.success) {
-                      showToast("success", data.message || "Connected successfully!");
+                      showToast("success", data.message || "Token updated and connected successfully!");
                       await fetchPages();
-                      if (data.page?.id) setSelectedPageId(data.page.id);
                       setShowAddPageModal(false);
                     } else {
                       showToast("error", data.error || "Failed to connect. Check your Token.");
