@@ -253,8 +253,13 @@ export default function FacebookSchedulerPage() {
       const data = await res.json();
       if (data.success && data.pages) {
         setPages(data.pages);
-        if (data.pages.length > 0 && !selectedPageId) {
-          setSelectedPageId(data.pages[0].id);
+        if (data.pages.length > 0) {
+          setSelectedPageId((prev) => {
+            const exists = data.pages.some((p: any) => p.id === prev);
+            return exists ? prev : data.pages[0].id;
+          });
+        } else {
+          setSelectedPageId("");
         }
       }
     } catch (err) {
@@ -480,14 +485,18 @@ export default function FacebookSchedulerPage() {
     e.preventDefault();
     const errors: string[] = [];
 
-    const effectivePageIds = isMultiPageMode
-      ? selectedPageIds
-      : selectedPageId
-      ? [selectedPageId]
-      : [];
+    const validPageIds = pages.map((p) => p.id);
+    let effectivePageIds = (
+      isMultiPageMode ? selectedPageIds : selectedPageId ? [selectedPageId] : []
+    ).filter((id) => validPageIds.includes(id));
+
+    if (effectivePageIds.length === 0 && pages.length > 0) {
+      effectivePageIds = [pages[0].id];
+      setSelectedPageId(pages[0].id);
+    }
 
     if (effectivePageIds.length === 0) {
-      errors.push("Please select at least one Facebook Page.");
+      errors.push("Please connect and select at least one Facebook Page.");
     }
 
     if (!caption.trim() && !mediaPreviewUrl && mediaUrls.length === 0) {
