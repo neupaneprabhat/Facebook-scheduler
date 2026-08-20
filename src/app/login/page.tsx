@@ -4,23 +4,20 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Lock,
-  Mail,
   User as UserIcon,
   Eye,
   EyeOff,
   ArrowRight,
   ShieldCheck,
   Calendar,
-  Sparkles,
   AlertCircle,
   CheckCircle2,
+  KeyRound,
 } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [isRegister, setIsRegister] = useState(false);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -53,29 +50,26 @@ export default function LoginPage() {
     setSuccessMessage(null);
     setLoading(true);
 
-    const endpoint = isRegister ? "/api/auth/register" : "/api/auth/login";
-    const payload = isRegister ? { name, email, password } : { email, password };
-
     try {
-      const res = await fetch(endpoint, {
+      const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ username, password }),
       });
 
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        setErrorMessage(data.error || "Authentication failed. Please check your inputs.");
+        setErrorMessage(data.error || "Invalid developer credentials.");
         setLoading(false);
         return;
       }
 
-      setSuccessMessage(isRegister ? "Account created! Redirecting..." : "Welcome back! Redirecting...");
+      setSuccessMessage("Authenticated! Entering dashboard...");
       setTimeout(() => {
         router.replace("/");
         router.refresh();
-      }, 700);
+      }, 500);
     } catch (err: any) {
       setErrorMessage(err.message || "Network error. Please try again.");
       setLoading(false);
@@ -95,7 +89,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-[#F0F2F5] flex flex-col justify-center items-center p-4 sm:p-6 lg:p-8">
-      {/* Decorative background blurs */}
+      {/* Decorative background ambient glows */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute -top-32 -left-32 w-96 h-96 bg-blue-400/10 rounded-full blur-3xl" />
         <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-indigo-400/10 rounded-full blur-3xl" />
@@ -110,49 +104,14 @@ export default function LoginPage() {
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
             Facebook Post Scheduler
           </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            {isRegister
-              ? "Create your account to start managing and scheduling posts"
-              : "Sign in to access your Facebook scheduling dashboard"}
-          </p>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 mt-2 rounded-full bg-slate-200/80 text-slate-700 text-xs font-semibold">
+            <KeyRound className="w-3.5 h-3.5 text-blue-600" />
+            <span>Developer Access Portal</span>
+          </div>
         </div>
 
         {/* Card */}
         <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/60 border border-slate-200/80 p-6 sm:p-8 backdrop-blur-xl">
-          {/* Tabs */}
-          <div className="flex p-1 bg-slate-100/80 rounded-2xl mb-6">
-            <button
-              type="button"
-              onClick={() => {
-                setIsRegister(false);
-                setErrorMessage(null);
-                setSuccessMessage(null);
-              }}
-              className={`flex-1 py-2.5 text-xs sm:text-sm font-bold rounded-xl transition-all ${
-                !isRegister
-                  ? "bg-white text-blue-600 shadow-sm"
-                  : "text-slate-500 hover:text-slate-800"
-              }`}
-            >
-              Sign In
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setIsRegister(true);
-                setErrorMessage(null);
-                setSuccessMessage(null);
-              }}
-              className={`flex-1 py-2.5 text-xs sm:text-sm font-bold rounded-xl transition-all ${
-                isRegister
-                  ? "bg-white text-blue-600 shadow-sm"
-                  : "text-slate-500 hover:text-slate-800"
-              }`}
-            >
-              Create Account
-            </button>
-          </div>
-
           {/* Error Banner */}
           {errorMessage && (
             <div className="mb-5 p-3.5 rounded-2xl bg-red-50 border border-red-200/70 flex items-start gap-2.5 text-red-700 text-xs sm:text-sm animate-in fade-in slide-in-from-top-1">
@@ -170,41 +129,21 @@ export default function LoginPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {isRegister && (
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Full Name
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                    <UserIcon className="w-4 h-4" />
-                  </div>
-                  <input
-                    type="text"
-                    required
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Prabhat Neupane"
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 text-sm outline-none transition-all"
-                  />
-                </div>
-              </div>
-            )}
-
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Email Address
+                Developer Username / Email
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                  <Mail className="w-4 h-4" />
+                  <UserIcon className="w-4 h-4" />
                 </div>
                 <input
-                  type="email"
+                  type="text"
                   required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@example.com"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="admin"
+                  autoComplete="username"
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 text-sm outline-none transition-all"
                 />
               </div>
@@ -212,7 +151,7 @@ export default function LoginPage() {
 
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Password
+                Developer Password
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -221,23 +160,20 @@ export default function LoginPage() {
                 <input
                   type={showPassword ? "text" : "password"}
                   required
-                  minLength={6}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
+                  autoComplete="current-password"
                   className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 text-sm outline-none transition-all"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-              {isRegister && (
-                <p className="text-[11px] text-slate-400 mt-1">Must be at least 6 characters</p>
-              )}
             </div>
 
             <button
@@ -249,7 +185,7 @@ export default function LoginPage() {
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
                 <>
-                  <span>{isRegister ? "Create Account" : "Sign In to Dashboard"}</span>
+                  <span>Sign In as Developer</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
@@ -259,7 +195,7 @@ export default function LoginPage() {
           {/* Security note */}
           <div className="mt-6 pt-5 border-t border-slate-100 flex items-center justify-center gap-1.5 text-slate-400 text-xs">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-            <span>Secure 256-bit encrypted authentication</span>
+            <span>Restricted Access • Developer Authentication</span>
           </div>
         </div>
 
