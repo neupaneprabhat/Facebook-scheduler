@@ -353,6 +353,21 @@ export default function FacebookSchedulerPage() {
     }
 
     setIsUploadingMedia(true);
+
+    // Generate instant client-side blob previews so user sees image/video immediately
+    if (hasVideo) {
+      const blobUrl = URL.createObjectURL(files[0]);
+      setMediaUrls([]);
+      setMediaPreviewUrl(blobUrl);
+      setMediaType("VIDEO");
+    } else {
+      const blobUrls = files.map((f) => URL.createObjectURL(f));
+      const combined = [...mediaUrls, ...blobUrls];
+      setMediaUrls(combined);
+      setMediaPreviewUrl(combined[0]);
+      setMediaType(combined.length > 1 ? "MULTI_IMAGE" : "IMAGE");
+    }
+
     const formData = new FormData();
     for (const f of files) {
       formData.append("files", f);
@@ -371,13 +386,12 @@ export default function FacebookSchedulerPage() {
           setMediaType("VIDEO");
           showToast("success", "Video uploaded and ready!");
         } else {
-          // Images: append to existing mediaUrls if any
-          const newUrls = (data.urls || [data.url]) as string[];
-          const combined = [...mediaUrls, ...newUrls];
-          setMediaUrls(combined);
-          setMediaPreviewUrl(combined[0]);
-          setMediaType(combined.length > 1 ? "MULTI_IMAGE" : "IMAGE");
-          showToast("success", `${newUrls.length} image(s) uploaded successfully!`);
+          // Images: use server uploaded URLs
+          const serverUrls = (data.urls || [data.url]) as string[];
+          setMediaUrls(serverUrls);
+          setMediaPreviewUrl(serverUrls[0]);
+          setMediaType(serverUrls.length > 1 ? "MULTI_IMAGE" : "IMAGE");
+          showToast("success", `${serverUrls.length} image(s) uploaded successfully!`);
         }
       } else {
         showToast("error", data.error || "Failed to upload files.");
@@ -1514,7 +1528,13 @@ export default function FacebookSchedulerPage() {
                     {/* Media — only shown for selected accounts */}
                     {isTarget && mediaType === "VIDEO" && mediaPreviewUrl ? (
                       <div className="w-full max-h-[320px] bg-slate-900 overflow-hidden flex items-center justify-center border-t border-b border-slate-100">
-                        <video src={mediaPreviewUrl} controls playsInline className="w-full max-h-[320px] object-contain bg-black" />
+                        <video
+                          src={mediaPreviewUrl}
+                          controls
+                          playsInline
+                          preload="auto"
+                          className="w-full max-h-[320px] object-contain bg-black"
+                        />
                       </div>
                     ) : isTarget && mediaUrls.length > 1 ? (
                       <div className="w-full border-t border-b border-slate-100 bg-slate-900 overflow-hidden">
