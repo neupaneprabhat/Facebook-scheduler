@@ -845,15 +845,17 @@ export default function FacebookSchedulerPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img
-              src="/logo.png"
-              alt="Facebook Scheduler Logo"
-              className="h-10 w-auto object-contain drop-shadow-xs"
+              src="/logo-icon.png"
+              alt="Facebook Scheduler Icon"
+              className="w-10 h-10 object-contain drop-shadow-xs"
             />
-            <div className="hidden sm:block">
+            <div>
               <h1 className="text-base font-bold text-slate-900 tracking-tight leading-tight">
-                Facebook Post Scheduler
+                Facebook Scheduler
               </h1>
-              <p className="text-[11px] text-slate-400 font-medium">Plan • Schedule • Publish</p>
+              <p className="text-[11px] text-slate-500 font-medium tracking-wide">
+                Plan <span className="text-blue-600 font-bold">•</span> Schedule <span className="text-blue-600 font-bold">•</span> Publish
+              </p>
             </div>
           </div>
 

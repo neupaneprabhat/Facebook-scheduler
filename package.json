@@ -30,5 +30,7 @@
     "typescript": "^5.6.3",
     "zod": "^3.23.8"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "sharp": "^0.35.3"
+  }
 }
