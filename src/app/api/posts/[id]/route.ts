@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "../../../../lib/prisma";
-import { schedulePostJob } from "../../../../lib/scheduler";
+import { schedulePostJob, cancelPostJob } from "../../../../lib/scheduler";
 
 export async function GET(
   req: NextRequest,
@@ -127,6 +127,7 @@ export async function DELETE(
       return NextResponse.json({ success: false, error: "Post not found" }, { status: 404 });
     }
 
+    cancelPostJob(params.id);
     await prisma.post.delete({
       where: { id: params.id },
     });

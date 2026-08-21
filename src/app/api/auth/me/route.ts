@@ -17,6 +17,29 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ authenticated: false, user: null });
     }
 
+    // ── Env-admin fast path ──────────────────────────────────────────────────
+    // On Render (and similar platforms), the SQLite DB is wiped on every restart.
+    // If the JWT belongs to the configured admin account, skip the DB lookup so
+    // the session survives server restarts without forcing a re-login.
+    const envAdminEmail = "admin@facebook-scheduler.com";
+    const envAdminUser = (process.env.ADMIN_USERNAME || "admin").trim();
+    const isEnvAdmin =
+      session.email === envAdminEmail ||
+      session.email === `${envAdminUser}@localhost`;
+
+    if (isEnvAdmin) {
+      return NextResponse.json({
+        authenticated: true,
+        user: {
+          id: session.userId,
+          name: session.name,
+          email: session.email,
+          role: "ADMIN",
+        },
+      });
+    }
+    // ────────────────────────────────────────────────────────────────────────
+
     const user = await prisma.user.findUnique({
       where: { id: session.userId },
       select: {

@@ -3,6 +3,23 @@ import { prisma } from "../../../../lib/prisma";
 import { encryptToken } from "../../../../lib/crypto";
 
 const GRAPH_API_VERSION = process.env.FACEBOOK_GRAPH_API_VERSION || "v21.0";
+const APP_ID = process.env.FACEBOOK_APP_ID || "";
+const APP_SECRET = process.env.FACEBOOK_APP_SECRET || "";
+
+/** Exchange any token for a long-lived (never-expiring) page token */
+async function exchangeLongLived(token: string): Promise<string> {
+  try {
+    const url = `https://graph.facebook.com/${GRAPH_API_VERSION}/oauth/access_token?grant_type=fb_exchange_token&client_id=${APP_ID}&client_secret=${APP_SECRET}&fb_exchange_token=${token}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (res.ok && !data.error && data.access_token) {
+      return data.access_token;
+    }
+  } catch (e) {
+    console.warn("Long-lived token exchange failed:", e);
+  }
+  return token; // Fallback to original token
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -29,7 +46,9 @@ export async function POST(req: NextRequest) {
         // User Token with 1 or more pages! Import all of them!
         const importedPages: any[] = [];
         for (const p of accountsData.data) {
-          const enc = encryptToken(p.access_token || token);
+          // Exchange for long-lived (never-expiring) page token before saving
+          const longLivedToken = await exchangeLongLived(p.access_token || token);
+          const enc = encryptToken(longLivedToken);
           const saved = await prisma.facebookPage.upsert({
             where: { pageId: p.id },
             update: {

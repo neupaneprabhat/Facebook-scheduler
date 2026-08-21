@@ -3,36 +3,8 @@ import { prisma } from "../../../lib/prisma";
 import { schedulePostJob, startBackgroundScheduler } from "../../../lib/scheduler";
 import { z } from "zod";
 
-// Initialize scheduler runner and re-register all pending posts on startup
+// Ensure scheduler runner is started
 startBackgroundScheduler();
-
-(async () => {
-  if (
-    process.env.NEXT_PHASE === "phase-production-build" ||
-    process.env.npm_lifecycle_event === "build"
-  ) {
-    return;
-  }
-  try {
-    const now = new Date();
-    const pendingPosts = await prisma.post.findMany({
-      where: {
-        status: "SCHEDULED",
-        scheduledAt: { gt: now },
-      },
-      select: { id: true, scheduledAt: true },
-    });
-
-    if (pendingPosts.length > 0) {
-      console.log(`[Scheduler] Re-registering ${pendingPosts.length} pending scheduled post(s) after startup`);
-      for (const post of pendingPosts) {
-        schedulePostJob(post.id, post.scheduledAt);
-      }
-    }
-  } catch (err) {
-    console.error("[Scheduler] Failed to re-register pending posts on startup:", err);
-  }
-})();
 
 
 const createPostSchema = z.object({

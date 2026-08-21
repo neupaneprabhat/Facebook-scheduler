@@ -144,13 +144,36 @@ export async function getFacebookPages(userAccessToken: string): Promise<Array<{
     throw new Error(data.error?.message || "Failed to retrieve Facebook Pages from Meta API");
   }
 
-  return (data.data || []).map((p: any) => ({
-    id: p.id,
-    name: p.name,
-    category: p.category,
-    accessToken: p.access_token,
-    pictureUrl: p.picture?.data?.url || null,
-  }));
+  const appId = process.env.FACEBOOK_APP_ID!;
+  const appSecret = process.env.FACEBOOK_APP_SECRET!;
+
+  // Exchange each page access token for a long-lived (never-expiring) token
+  const pages = await Promise.all(
+    (data.data || []).map(async (p: any) => {
+      let pageToken = p.access_token;
+      try {
+        const exchangeUrl = `${GRAPH_BASE_URL}/oauth/access_token?grant_type=fb_exchange_token&client_id=${appId}&client_secret=${appSecret}&fb_exchange_token=${pageToken}`;
+        const exchangeRes = await fetch(exchangeUrl);
+        const exchangeData = await exchangeRes.json();
+        if (exchangeRes.ok && !exchangeData.error && exchangeData.access_token) {
+          pageToken = exchangeData.access_token; // Long-lived or never-expiring page token
+        } else {
+          console.warn(`Could not exchange long-lived token for page ${p.id}:`, exchangeData.error?.message);
+        }
+      } catch (e) {
+        console.warn(`Token exchange failed for page ${p.id}:`, e);
+      }
+      return {
+        id: p.id,
+        name: p.name,
+        category: p.category,
+        accessToken: pageToken,
+        pictureUrl: p.picture?.data?.url || null,
+      };
+    })
+  );
+
+  return pages;
 }
 
 /**

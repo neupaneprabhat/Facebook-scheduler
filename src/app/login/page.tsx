@@ -98,13 +98,12 @@ export default function LoginPage() {
       <div className="w-full max-w-md relative z-10">
         {/* Header Branding */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-xl shadow-blue-500/25 mb-4 ring-4 ring-white">
-            <Calendar className="w-8 h-8" />
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Facebook Post Scheduler
-          </h1>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 mt-2 rounded-full bg-slate-200/80 text-slate-700 text-xs font-semibold">
+          <img
+            src="/logo.png"
+            alt="Facebook Scheduler Logo"
+            className="w-48 sm:w-56 h-auto mx-auto object-contain drop-shadow-md mb-2"
+          />
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 mt-1 rounded-full bg-slate-200/80 text-slate-700 text-xs font-semibold">
             <KeyRound className="w-3.5 h-3.5 text-blue-600" />
             <span>Developer Access Portal</span>
           </div>
